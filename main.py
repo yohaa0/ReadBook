@@ -119,20 +119,9 @@ class MainScreen(Layout):
     def on_close(self):
         pass
         
-    def selct_file():
-        pass
-      
-    def load(self, view, dummy):
-        droid = FullScreenWrapper2App.get_android_instance()
-        droid.makeToast("请选择UTF-8文本格式小说！")
-        
-        saved_logo = qpy.tmp+"/qpy.logo"
-        ur.urlretrieve("https://www.qpython.org/static/img_logo.png", saved_logo)
-        self.views.logo.src = "file://"+saved_logo
-        #file_name = "/storage/emulated/0/text/庆余年.txt" 
-# （1）创建读文件对象 
-        file_list=[]
-        file_path=[]
+    def select_file():
+        file_list=[]#文档列表
+        file_path=[]#文档路径
         for dirname,dirnames,filenames in os.walk('/storage/emulated/0/text'):
            for filename in filenames:
                if os.path.splitext(filename)[1].lower()=='.txt':
@@ -146,26 +135,44 @@ class MainScreen(Layout):
         droid.dialogSetItems(file_list)
         droid.dialogSetPositiveButtonText('OK')        
         droid.dialogShow()
-        select_file=droid.dialogGetResponse().result
-        print(file_list[select_file['item']])
-        file_name =file_path[select_file['item']] 
+        #选择文档结果
+        set_file=droid.dialogGetResponse().result
+        print(file_list[set_file['item']])
+        droid.ttsSpeak('您选的是'+file_list[set_file['item']][:-4])
+        #获取文档_名字_及全路径
+        file_name =file_path[set_file['item']] 
+       # 打开文档
         file_read = open(file_name, mode="r", encoding="utf-8") 
-# （2）一行一行读取文件内容 
-        txt_list = [l.strip() for l in file_read.readlines()] # 去行结束符
-   # 读取一行内容    
-        txt_list_len=len(txt_list)
-       # print(txtlistlen)
+     #一行一行读取文件内容到list 并去掉_行结束符
+        make_list = [l.strip() for l in file_read.readlines()] 
+       # 关闭文档
         file_read.close()
-        get_message = droid.dialogGetInput('总共'+str(txt_list_len)+'行', '从哪一段开始阅读?').result
+        return make_list
+      
+    def load(self, view, dummy):
+        droid = FullScreenWrapper2App.get_android_instance()
+        droid.makeToast("请选择UTF-8文本格式小说！")
+        droid.ttsSpeak("请选择UTF-8文本格式小说！")
+        saved_logo = qpy.tmp+"/qpy.logo"
+        ur.urlretrieve("https://www.qpython.org/static/img_logo.png", saved_logo)
+        self.views.logo.src = "file://"+saved_logo
+        #获取要读的文本文档每一行list
+           
+        txt_list=[]
+        txt_list=MainScreen.select_file()
+        txt_list_len=len(txt_list)
+        droid.ttsSpeak(('文章共有'+str(txt_list_len)+'行数, 从哪一段开始阅读?请输入行数字。'))
+        get_message = droid.dialogGetInput('总共'+str(txt_list_len)+'行', '从哪一段开始阅读?').result 
         start_num=int(get_message)
-        
+        #print( start_num)
+        droid.ttsSpeak(('还有'+str(txt_list_len-start_num)+'行数,阅读多少行数?请输入。'))
         get_message2 = droid.dialogGetInput('还有'+str(txt_list_len-start_num)+"行", '您需要阅读多少行?').result
         end_num=int(get_message2)
-
+        time.sleep(1)
         read_num=0#结束计数
         if (start_num>txt_list_len):
-           droid.makeToast('输入错误段数，请退出')
-           
+           droid.makeToast('输入错误行数，请退出')
+           droid.ttsSpeak('输入错误行数，请退出')
         else:
            for p in range(start_num,txt_list_len):
                #Rdtext="%s"%(line)
@@ -176,21 +183,20 @@ class MainScreen(Layout):
                dayintxt=str(read_num)+"_"+str(p)+"_"+Rdtext
                self.views.text1.text=dayintxt
                #droid.makeToast(str(read_num)+str(p)+Rdtext)
-               if not Rdtext:#到设定次数停止
-                  self.views.text1.text="已读完，请退出！"
-                  droid.ttsSpeak(self.views.text1.text)
-                  break
-               else:
+               
          #droid.setTtsPitch(2)
-                  droid.ttsSpeak(Rdtext)
-                  time.sleep(5)
-                  if end_num<=read_num:#到设定次数停止
+               droid.ttsSpeak(Rdtext)
+               time.sleep(5)
+               if end_num<=read_num:#到设定次数停止
                      self.views.text1.text="已读完，请退出！"
                      droid.ttsSpeak(self.views.text1.text)
                      break
-                  else:
+               else:
                      time.sleep(1)
-
+         
+        self.views.text1.text="已读完，请退出！"
+        droid.ttsSpeak(self.views.text1.text)
+            
     def exit(self, view, dummy):
         droid = FullScreenWrapper2App.get_android_instance()
         droid.makeToast("Exit")
