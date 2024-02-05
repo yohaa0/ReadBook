@@ -62,6 +62,7 @@ txtlistlen=len(txtlist)
 #droid.dialogDismiss()
 
 print(txtlistlen)
+#关闭文件对象
 file_read.close()
 message = droid.dialogGetInput('总共'+str(txtlistlen)+'行', '从哪一段开始阅读?').result
 starnum=int(message)
